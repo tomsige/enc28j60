@@ -435,3 +435,4 @@ build/pico-sdk/tools/cmake_install.cmake
 build/pico-sdk/tools/Makefile
 build/pico-sdk/tools/CMakeFiles/CMakeDirectoryInformation.cmake
 build/pico-sdk/tools/CMakeFiles/progress.marks
+workspace.code-workspace
