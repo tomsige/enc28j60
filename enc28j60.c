@@ -88,12 +88,82 @@ uint8_t enc28j60_rcr(uint8_t adr)
 	return enc28j60_read_op(ENC28J60_SPI_RCR, adr);
 }
 
+// Read register pair   
+/*
+uint16_t enc28j60_rcr16(uint8_t adr)
+{
+	enc28j60_set_bank(adr);
+	return enc28j60_read_op(ENC28J60_SPI_RCR, adr) |
+		(enc28j60_read_op(ENC28J60_SPI_RCR, adr+1) << 8);
+}
+*/
+
 // Write register
 void enc28j60_wcr(uint8_t adr, uint8_t data)
 {
 	enc28j60_set_bank(adr);
 	enc28j60_write_op(ENC28J60_SPI_WCR, adr, data);
 }
+
+// Write register pair
+/*
+void enc28j60_wcr16(uint8_t adr, uint16_t data)
+{
+	enc28j60_set_bank(adr);
+	enc28j60_write_op(ENC28J60_SPI_WCR, adr, data);
+	enc28j60_write_op(ENC28J60_SPI_WCR, adr+1, data>>8);
+}
+*/
+
+// Clear bits in register (reg &= ~mask)
+void enc28j60_bfc(uint8_t adr, uint8_t mask)
+{
+	enc28j60_set_bank(adr);
+	enc28j60_write_op(ENC28J60_SPI_BFC, adr, mask);
+}
+
+// Set bits in register (reg |= mask)
+void enc28j60_bfs(uint8_t adr, uint8_t mask)
+{
+	enc28j60_set_bank(adr);
+	enc28j60_write_op(ENC28J60_SPI_BFS, adr, mask);
+}
+
+
+// read the revision of the chip:
+uint8_t enc28j60getrev(void)
+{
+	return(enc28j60_rcr(EREVID));
+}
+
+// Read Rx/Tx buffer (at ERDPT)
+void enc28j60_read_buffer(uint8_t *buf, uint16_t len)
+{
+    enc28j60_wcr(ERDPTL, ENC28J60_RXSTART & 0xFF);
+    enc28j60_wcr(ERDPTH, ENC28J60_RXSTART >> 8);
+
+	uint8_t cmd = ENC28J60_SPI_RBM; 
+
+	enc28j60_select();
+	spi_write_blocking(SPI_PORT, &cmd, 1);
+	spi_read_blocking(SPI_PORT, 0, buf, len);		
+	enc28j60_release();
+}
+
+// Write Rx/Tx buffer (at EWRPT)
+void enc28j60_write_buffer(uint8_t *buf, uint16_t len)
+{
+	uint8_t cmd = ENC28J60_SPI_WBM;
+
+    enc28j60_wcr(EWRPTL, ENC28J60_TXSTART & 0xFF);
+    enc28j60_wcr(EWRPTH, ENC28J60_TXSTART >> 8);
+
+	enc28j60_select();
+	spi_write_blocking(SPI_PORT, &cmd, 1);
+	spi_write_blocking(SPI_PORT, buf, len);
+	enc28j60_release();
+}
+
 
 
 
@@ -105,7 +175,7 @@ void enc28j60_init(uint8_t *macadrs)  {
 
     //spi_set_format(SPI_PORT, 8, 0, 0, SPI_MSB_FIRST);
     spi_deinit(SPI_PORT);
-    spi_init(SPI_PORT, 20000 * 1000); //20 MHz
+    spi_init(SPI_PORT, 1000 * 1000); //20 MHz
 
     gpio_set_function(PIN_MISO, GPIO_FUNC_SPI);
     gpio_set_function(PIN_SCK, GPIO_FUNC_SPI);
@@ -117,6 +187,34 @@ void enc28j60_init(uint8_t *macadrs)  {
 
     enc28j60_soft_reset();
 
+	// set receive buffer start address
+	enc28j60_rxrdpt = ENC28J60_RXSTART;
+
+	// Setup Rx/Tx buffer
+	enc28j60_wcr(ERXSTL, ENC28J60_RXSTART&0xFF);
+	enc28j60_wcr(ERXSTH, ENC28J60_RXSTART>>8);	
+
+	// set receive pointer address
+	enc28j60_wcr(ERXRDPTL, ENC28J60_RXEND&0xFF);
+	enc28j60_wcr(ERXRDPTH, ENC28J60_RXEND>>8);
+
+	// RX end
+	enc28j60_wcr(ERXNDL, ENC28J60_RXEND&0xFF);
+	enc28j60_wcr(ERXNDH, ENC28J60_RXEND>>8);
+
+	// TX start
+	enc28j60_wcr(ETXSTL, ENC28J60_TXSTART&0xFF);
+	enc28j60_wcr(ETXSTH, ENC28J60_TXSTART>>8);
+
+	// TX end
+	enc28j60_wcr(ETXNDL, ENC28J60_TXSTART&0xFF);
+	enc28j60_wcr(ETXNDH, ENC28J60_TXSTART>>8);
+
+	uint8_t buf[2] = {ENC28J60_SPI_WBM, 0x00};
+	spi_write_blocking(SPI_PORT, buf, 2);
+	
+
+
 	//BANK 3
 	enc28j60_wcr(MAADR5, macadrs[0]); // Set MAC address
     enc28j60_wcr(MAADR4, macadrs[1]);
@@ -127,4 +225,8 @@ void enc28j60_init(uint8_t *macadrs)  {
 
 
     printf("ENC28J60 init procedure done.\n");
+
+	// switch to bank 0
+	enc28j60_set_bank(ECON1);
+	enc28j60_release();
 }
