@@ -436,3 +436,5 @@ build/pico-sdk/tools/Makefile
 build/pico-sdk/tools/CMakeFiles/CMakeDirectoryInformation.cmake
 build/pico-sdk/tools/CMakeFiles/progress.marks
 workspace.code-workspace
+tmp/simple_server.c
+tmp/simple_server.h
