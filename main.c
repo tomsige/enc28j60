@@ -84,11 +84,11 @@ uint16_t print_webpage(uint8_t *buf,uint8_t on_off)
 	{
     uint16_t plen;
     plen=fill_tcp_data_p(buf,0,PSTR("HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nPragma: no-cache\r\n\r\n"));
-    plen=fill_tcp_data_p(buf,plen,PSTR("<html><body><center><h1>STM32 VL Discovery kit</h1>\n<h1>http://mcu.cz server</h1><br><br><br><br>\n"));
-    plen=fill_tcp_data_p(buf,plen,PSTR("<p>LED stav: "));
+    plen=fill_tcp_data_p(buf,plen,PSTR("<html><body><center><h1>Raspberry Pi Pico</h1>\n<h1>http://mcu.cz server</h1><br><br><br><br>\n"));
+    plen=fill_tcp_data_p(buf,plen,PSTR("<p>LED: "));
     if (on_off)
 			{
-            plen=fill_tcp_data_p(buf,plen,PSTR("<font color=\"#0000FF\"> LIGHTING </font>"));
+            plen=fill_tcp_data_p(buf,plen,PSTR("<font color=\"#0000FF\"> sviti </font>"));
     		}
 		else
 			{
@@ -101,11 +101,11 @@ uint16_t print_webpage(uint8_t *buf,uint8_t on_off)
     plen=fill_tcp_data_p(buf,plen,PSTR("<br><br><br><br>"));
     if(0 == 0 /*STM32vldiscovery_PBGetState(BUTTON_USER)*/)
 	{
-        plen=fill_tcp_data_p(buf,plen,PSTR("<br><p>User tlacitko nestisknuto.<br><br><br></p>\n"));
+        plen=fill_tcp_data_p(buf,plen,PSTR("<br><p>Tlacitko nestisknuto.<br><br><br></p>\n"));
 	}
 	else
 	{
-        plen=fill_tcp_data_p(buf,plen,PSTR("<br><p>User tlacitko <b>stisknuto</b>.<br><br><br></p>\n"));
+        plen=fill_tcp_data_p(buf,plen,PSTR("<br><p>Tlacitko <b>stisknuto</b>.<br><br><br></p>\n"));
 	}
     plen=fill_tcp_data_p(buf,plen,PSTR("<p><a href=\""));
     // the url looks like this http://baseurl/password/command
@@ -119,7 +119,7 @@ uint16_t print_webpage(uint8_t *buf,uint8_t on_off)
 			{
             plen=fill_tcp_data_p(buf,plen,PSTR("/1\">rozsvitit LED</a><p>"));
     		}
-    plen=fill_tcp_data_p(buf,plen,PSTR("</center><br><br><br><hr><br>STM32F100 Value Line UCOS-II V2.85 WEB\n</body></html>"));
+    plen=fill_tcp_data_p(buf,plen,PSTR("</center><br><br><br><hr><br>Raspberry Pi Pico web\n</body></html>"));
     //plen=fill_tcp_data_p(buf,plen,PSTR(WebSide));
     
     return(plen);
