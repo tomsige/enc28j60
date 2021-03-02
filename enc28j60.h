@@ -30,7 +30,7 @@ uint16_t enc28j60_recv_packet(uint8_t *buf, uint16_t buflen);
 void enc28j60_drop_packet(void);
 
 // R/W control registers
-//uint8_t enc28j60_rcr(uint8_t adr);
+uint8_t enc28j60_rcr(uint8_t adr);
 //void enc28j60_wcr(uint8_t adr, uint8_t arg);
 //uint16_t enc28j60_rcr16(uint8_t adr);
 //void enc28j60_wcr16(uint8_t adr, uint16_t arg);
@@ -48,7 +48,7 @@ void enc28j60_drop_packet(void);
 // revision
 //uint8_t enc28j60getrev(void);
 
-//void enc28j60_interrupt_enable(uint16_t level);
+void enc28j60_interrupt_enable(uint16_t level);
 
 
 

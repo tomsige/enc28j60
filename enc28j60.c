@@ -187,6 +187,12 @@ void enc28j60_write_phy(uint8_t adr, uint16_t data)
 		;
 }
 
+void enc28j60_interrupt_enable(uint16_t level)
+{   // switch to bank 0
+    enc28j60_set_bank(ECON1);
+    enc28j60_write_op(ENC28J60_SPI_BFS, EIE, level);
+}
+
 void enc28j60_init(uint8_t *macadrs)  {
 
     printf("\nStarting ENC28J60 init procedure\n");

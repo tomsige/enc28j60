@@ -9,8 +9,8 @@ project(enc28j60)
 
 # Initialize the SDK
 pico_sdk_init()
-add_executable(enc28j60 main.c enc28j60.c ip_arp_udp_tcp.c)
+add_executable(enc28j60 main.c enc28j60.c ip_arp_udp_tcp.c server.c)
 pico_enable_stdio_uart(enc28j60 1)
 
 pico_add_extra_outputs(enc28j60)
-target_link_libraries(enc28j60 pico_stdlib hardware_spi)
+target_link_libraries(enc28j60 pico_stdlib hardware_spi pico_unique_id)
