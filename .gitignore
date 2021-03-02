@@ -438,3 +438,8 @@ build/pico-sdk/tools/CMakeFiles/progress.marks
 workspace.code-workspace
 tmp/simple_server.c
 tmp/simple_server.h
+build/CMakeFiles/enc28j60.dir/home/pi/pico/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
+build/CMakeFiles/enc28j60.dir/home/pi/pico/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.obj
+.gitignore
+build/CMakeFiles/enc28j60.dir/server.c.obj
+.gitignore
