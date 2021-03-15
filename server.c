@@ -34,19 +34,26 @@ void enc28j60_interrupt_handler(void)
     			make_arp_answer_from_request(buf);
                 printf("ARP packet.\n");
     	   	}
+
+			  
             // check if ip packets are for us:
             else if(eth_type_is_ip_and_my_ip(buf,plen)!=0)
             {
                 // check ICMP ping packets are for us:
+                if(buf[IP_PROTO_P]==IP_PROTO_ICMP_V && buf[ICMP_TYPE_P]==ICMP_TYPE_ECHOREPLY_V)
+                {
+//        			make_echo_reply_from_request(buf, plen);	// send pong
+                    printf("PONG.\n");
+               	}
+
                 if(buf[IP_PROTO_P]==IP_PROTO_ICMP_V && buf[ICMP_TYPE_P]==ICMP_TYPE_ECHOREQUEST_V)
                 {
         			make_echo_reply_from_request(buf, plen);	// send pong
-                    printf("Ping-pong.\n");
+                    //printf("Ping-pong.\n");
                	}
                 // tcp port www start, compare only the lower byte
                	else if (buf[IP_PROTO_P]==IP_PROTO_TCP_V&&buf[TCP_DST_PORT_H_P]==0&&buf[TCP_DST_PORT_L_P]==mywwwport)
         		{	// ano, jde o TCP paket a smeruje na nas www port
-                    printf("TCP pro nas.\n");
                     if (buf[TCP_FLAGS_P] & TCP_FLAGS_SYN_V)
        				{	// chce jen potvrdit syn, posleme ancknowledge
                         make_tcp_synack_from_syn(buf);
@@ -119,14 +126,17 @@ void enc28j60_interrupt_handler(void)
         	            }
         			} // if (buf[TCP_FLAGS_P] & TCP_FLAGS_ACK_V)
         		} // tcp port www END
+
+                
                 // udp start, we listen on udp port 1200=0x4B0
         		if (buf[IP_PROTO_P]==IP_PROTO_UDP_V&&buf[UDP_DST_PORT_H_P]==4&&buf[UDP_DST_PORT_L_P]==0xb0)
         		{
         			payloadlen=buf[UDP_LEN_L_P]-UDP_HEADER_LEN;
         			// you must sent a string starting with v
         			// e.g udpcom version 10.0.0.24
+                    printf("%s\n", (uint8_t *)&(buf[UDP_DATA_P]));
         			if (strncmp(password, (uint8_t *)&(buf[UDP_DATA_P]),5)==0)
-       				{	// find the first comma which indicates the start of a command:
+       				{	// find the first comma which indicates the start of a command:                        
         				cmd_pos=0;
         				while(cmd_pos<payloadlen)
         				{
@@ -198,7 +208,7 @@ void enc28j60_interrupt_handler(void)
 int8_t analyse_get_url(uint8_t *str)
 	{
 	uint8_t i=0;
-
+    printf("url: %s\n", str);
 	i = strncmp(password,str,5);
 	if (i != 0)
 	{
