@@ -131,6 +131,82 @@
 #define TCP_CHECKSUM_L_P 0x33
 #define TCP_OPTIONS_P 0x36
 //
+
+
+struct ethernet_frame {
+	uint8_t dst[6];
+	uint8_t	src[6];
+	uint8_t type[2];
+	//uint16_t type;
+};
+
+struct arp_frame 	{
+	uint8_t hw_type[2];
+	uint8_t protocol_type[2];
+	uint8_t  hw_size;
+	uint8_t  protocol_size;
+	uint8_t opcode[2];
+	uint8_t	 src_hw_addr[6];
+	uint8_t  src_ip_addr[4];
+	uint8_t	 dst_hw_addr[6];
+	uint8_t  dst_ip_addr[4];
+} __attribute__ ((packed));
+
+
+struct eth_arp_frame	{
+	struct ethernet_frame eth;
+	struct arp_frame arp;
+} __attribute__ ((packed));
+
+
+struct ip_frame	{
+	uint8_t version_and_length;
+	uint8_t	service;
+	uint8_t total_length[2];
+	uint8_t identification[2];
+	uint8_t flags_and_fragment_offset[2];
+	uint8_t time_to_live;
+	uint8_t protocol;
+	uint8_t checksum[2];
+	uint8_t src[4];
+	uint8_t dst[4];
+} __attribute__ ((packed));
+
+struct icmp_frame	{
+	uint8_t type;
+	uint8_t code;
+	uint8_t checksum[2];
+	uint8_t identifier[2];
+	uint8_t sequence[2];
+	uint8_t timestamp[8];
+	uint8_t data[32];
+} __attribute__ ((packed));
+
+
+struct eth_ip_icmp_frame	{
+	struct ethernet_frame eth;
+	struct ip_frame ip;
+	struct icmp_frame icmp;	
+} __attribute__ ((packed));
+
+
+struct udp_frame	{
+	uint8_t src_port[2];
+	uint8_t dst_port[2];
+	uint8_t length[2];
+	uint8_t checksum[2];
+} __attribute__ ((packed));
+
+
+struct eth_ip_udp_frame	{
+	struct ethernet_frame eth;
+	struct ip_frame ip;
+	struct udp_frame udp;
+} __attribute__ ((packed));
+
+
+
+
 #endif
 //@}
 

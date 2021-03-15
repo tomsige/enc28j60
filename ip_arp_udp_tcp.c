@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <string.h>
 #include "net.h"
 #include "pico/stdlib.h"
 #include "enc28j60.h"
@@ -105,6 +107,12 @@ uint8_t eth_type_is_arp_and_my_ip(uint8_t *buf, uint8_t len)
 	    return(0);
 	if(buf[ETH_TYPE_H_P] != ETHTYPE_ARP_H_V || buf[ETH_TYPE_L_P] != ETHTYPE_ARP_L_V)
 	    return(0);
+
+	//moje vsuvka
+	if (!(buf[ETH_ARP_OPCODE_H_P] != ETH_ARP_OPCODE_REPLY_H_V || buf[ETH_ARP_OPCODE_L_P] != ETH_ARP_OPCODE_REPLY_L_V))
+		printf("ARP response.\n");
+
+    // pokracovani puvodniho 
 	while(i<4)
 	{
 	    if(buf[ETH_ARP_DST_IP_P+i] != ipaddr[i])
@@ -499,3 +507,215 @@ void make_tcp_ack_with_data(uint8_t *buf, uint16_t dlen)
 }
 
 /* end of ip_arp_udp.c */
+
+
+uint16_t compute_sum(uint16_t sum, void const *ptr, int len)
+{
+	int i;
+	uint32_t s = sum;
+	for(i=0; i<len; i++)	{
+		uint16_t c = ((uint8_t const *)ptr)[i];
+		if (i & 1)	{
+			s += c;
+		} else {
+			s += c << 8;
+		}
+		s = (s + (s >> 16)) & 0xffff;
+	}
+	return (uint16_t)s;
+}
+
+
+
+void send_arp_probe(uint8_t *desired_ip)
+{
+	struct eth_arp_frame arp_packet;
+	memset(&arp_packet, 0, sizeof(struct eth_arp_frame));
+
+	memset(&arp_packet.eth.dst, 0xFF, 6);
+	memcpy(&arp_packet.eth.src, &macaddr, 6);
+	arp_packet.eth.type[0] = 0x08;
+	arp_packet.eth.type[1] = 0x06;
+	//arp_packet.eth.type = ((0x0806 << 8) & 0xFF00) || ((0x0806 >> 8) & 0x00FF);
+	arp_packet.arp.hw_type[0] = 0x00;
+	arp_packet.arp.hw_type[1] = 0x01;
+	arp_packet.arp.protocol_type[0] = 0x08;
+	arp_packet.arp.protocol_type[1] = 0x00;
+	arp_packet.arp.hw_size = 0x06;
+	arp_packet.arp.protocol_size = 0x04;
+	arp_packet.arp.opcode[0] = 0x00;
+	arp_packet.arp.opcode[1] = 0x01;
+	memcpy(&arp_packet.arp.src_hw_addr, &macaddr, 6);
+	memcpy(&arp_packet.arp.dst_ip_addr, desired_ip, 4);
+
+	enc28j60_send_packet((uint8_t *)&arp_packet, sizeof(struct eth_arp_frame));
+}
+
+
+void send_arp_request(uint8_t *desired_ip)
+{
+	struct eth_arp_frame arp_packet;
+	memset(&arp_packet, 0, sizeof(struct eth_arp_frame));
+
+	memset(&arp_packet.eth.dst, 0xFF, 6);
+	//memcpy(&arp_packet.eth.src, &macaddr, 6);
+	arp_packet.eth.type[0] = 0x08;
+	arp_packet.eth.type[1] = 0x06;
+	//arp_packet.eth.type = ((0x0806 << 8) & 0xFF00) || ((0x0806 >> 8) & 0x00FF);
+	arp_packet.arp.hw_type[0] = 0x00;
+	arp_packet.arp.hw_type[1] = 0x01;
+	arp_packet.arp.protocol_type[0] = 0x08;
+	arp_packet.arp.protocol_type[1] = 0x00;
+	arp_packet.arp.hw_size = 0x06;
+	arp_packet.arp.protocol_size = 0x04;
+	arp_packet.arp.opcode[0] = 0x00;
+	arp_packet.arp.opcode[1] = 0x01;
+	memcpy(&arp_packet.arp.src_hw_addr, &macaddr, 6);
+	memcpy(&arp_packet.arp.src_ip_addr, &ipaddr, 4);
+	memcpy(&arp_packet.arp.dst_ip_addr, desired_ip, 4);
+
+	enc28j60_send_packet((uint8_t *)&arp_packet, sizeof(struct eth_arp_frame));
+}
+
+//MAC mit nekde ulozenou a nepredavat ji ve funkci
+void send_echo_request(uint8_t *desired_ip, uint8_t *desired_mac)
+{
+	struct eth_ip_icmp_frame icmp_packet;
+	memset(&icmp_packet, 0, sizeof(struct eth_ip_icmp_frame));
+
+	//eth
+	memcpy(&icmp_packet.eth.dst, desired_mac, 6);
+	memcpy(&icmp_packet.eth.src, &macaddr, 6);
+	memset(&icmp_packet.eth.type[0], 0x08, 1);
+	memset(&icmp_packet.eth.type[1], 0x00, 1);
+
+	//ip
+	memset(&icmp_packet.ip.version_and_length, 0x45, 1);
+	memset(&icmp_packet.ip.service, 0, 1);
+	memset(&icmp_packet.ip.total_length[1], 0x44, 1);
+
+	memset(&icmp_packet.ip.flags_and_fragment_offset[0], 0x40, 1);
+	//memset(&icmp_packet.ip.identification[0], 0x40, 1);
+	//memset(&icmp_packet.ip.identification[1], 0x40, 1);
+	
+	memset(&icmp_packet.ip.checksum[0], 0x0, 1);
+	memset(&icmp_packet.ip.checksum[1], 0x0, 1);
+
+	memset(&icmp_packet.ip.time_to_live, 0x40, 1);
+	memset(&icmp_packet.ip.protocol, 0x01, 1);
+	memcpy(&icmp_packet.ip.src, &ipaddr, 4);
+	memcpy(&icmp_packet.ip.dst, desired_ip, 4);
+
+	uint32_t sum;
+	sum = compute_sum(0, &icmp_packet.ip, sizeof(struct ip_frame));
+	sum = ~sum;
+
+	memset(&icmp_packet.ip.checksum[0], (uint8_t)(sum >> 8), 1);
+	memset(&icmp_packet.ip.checksum[1], (uint8_t)(sum), 1);
+
+	//icmp
+	memset(&icmp_packet.icmp.type, 0x08, 1);
+	memset(&icmp_packet.icmp.code, 0x00, 1);
+	memset(&icmp_packet.icmp.sequence[0], 0x00, 1);
+	memset(&icmp_packet.icmp.sequence[1], 0x01, 1);
+/*	
+	memset(&icmp_packet.icmp.timestamp[0], 0xc2, 1);
+	memset(&icmp_packet.icmp.timestamp[1], 0xcb, 1);
+	memset(&icmp_packet.icmp.timestamp[2], 0x4a, 1);
+	memset(&icmp_packet.icmp.timestamp[3], 0x60, 1);
+	memset(&icmp_packet.icmp.timestamp[4], 0x6c, 1);
+	memset(&icmp_packet.icmp.timestamp[5], 0x64, 1);
+	memset(&icmp_packet.icmp.timestamp[6], 0x09, 1);
+	memset(&icmp_packet.icmp.timestamp[7], 0x00, 1);
+*/	
+	memset(&icmp_packet.icmp.data, 0x41, 32);
+
+	sum = compute_sum(0, &icmp_packet.icmp, sizeof(struct icmp_frame));
+	sum = ~sum;
+
+	memset(&icmp_packet.icmp.checksum[0], (uint8_t)(sum >> 8), 1);
+	memset(&icmp_packet.icmp.checksum[1], (uint8_t)(sum), 1);
+
+
+	enc28j60_send_packet((uint8_t *)&icmp_packet, sizeof(struct eth_ip_icmp_frame));
+}
+
+
+void send_udp_packet(uint8_t *dst_ip, uint8_t *dst_mac, uint8_t *data_buff, uint16_t datalen)	{
+
+	uint8_t buffer[ENC28J60_MAXFRAME];
+	
+	memset(buffer, 0, sizeof(buffer));
+
+	struct eth_ip_udp_frame *udp;
+	uint8_t *data;
+	
+    udp = (struct eth_ip_udp_frame *) buffer;
+	data = buffer + sizeof(struct eth_ip_udp_frame);
+
+	//eth
+	memcpy(&udp->eth.dst, dst_mac, 6);
+	memcpy(&udp->eth.src, &macaddr, 6);
+	memset(&udp->eth.type[0], 0x08, 1);
+	memset(&udp->eth.type[1], 0x00, 1);
+
+	//ip
+	memset(&udp->ip.version_and_length, 0x45, 1);
+	memset(&udp->ip.service, 0, 1);
+	memset(&udp->ip.flags_and_fragment_offset[0], 0x40, 1);
+	//memset(&udp_packet.ip.identification[0], 0x40, 1);
+	//memset(&udp_packet.ip.identification[1], 0x40, 1);
+
+	memset(&udp->ip.time_to_live, 0x40, 1);
+	memset(&udp->ip.protocol, 17, 1);
+	memcpy(&udp->ip.src, &ipaddr, 4);
+	memcpy(&udp->ip.dst, dst_ip, 4);
+
+	//udp
+	udp->udp.dst_port[0] = 0x13;
+	udp->udp.dst_port[1] = 0x8d;
+	udp->udp.src_port[0] = 0x8d;
+	udp->udp.src_port[1] = 0x13;
+   
+	memcpy(data, data_buff, datalen);
+	if (datalen < 18){
+		datalen = 18;  // count padding in
+	}
+
+	udp->ip.total_length[0] = (sizeof(struct ip_frame) + sizeof(struct udp_frame) + datalen) >> 8;
+	udp->ip.total_length[1] = (sizeof(struct ip_frame) + sizeof(struct udp_frame) + datalen) & 0xFF;
+	
+	uint32_t sum;
+	sum = compute_sum(0, &udp->ip, sizeof(struct ip_frame));
+	sum = ~sum;
+	memset(&udp->ip.checksum[0], (uint8_t)(sum >> 8), 1);
+	memset(&udp->ip.checksum[1], (uint8_t)(sum), 1);
+
+	udp->udp.length[0] = (uint8_t)((8 + datalen) >> 8);
+	udp->udp.length[1] = (uint8_t)((8 + datalen) & 0xFF);
+
+	struct	{
+		uint8_t src[4];
+		uint8_t dst[4];
+		uint8_t	 zero;
+		uint8_t  protocol;
+		uint8_t length[2];
+	} pseudo_header;
+
+	memcpy(&pseudo_header.src, udp->ip.src, 4);
+	memcpy(&pseudo_header.dst, udp->ip.dst, 4);
+	pseudo_header.zero = 0;
+	pseudo_header.protocol = udp->ip.protocol;
+	pseudo_header.length[0] = udp->udp.length[0];
+	pseudo_header.length[1] = udp->udp.length[1];
+
+	sum = compute_sum(0, &pseudo_header, sizeof(pseudo_header));
+	sum = compute_sum(sum, &udp->udp, sizeof(struct udp_frame) + datalen);
+	sum = ~sum;
+
+	memset(&udp->udp.checksum[0], (uint8_t)(sum >> 8), 1);
+	memset(&udp->udp.checksum[1], (uint8_t)(sum), 1);			
+
+	enc28j60_send_packet((uint8_t *)udp, sizeof(struct eth_ip_udp_frame) + datalen);
+}
+

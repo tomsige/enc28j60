@@ -15,9 +15,12 @@ uint LED_PIN = 25;
 uint RED_LED_PIN = 20;
 uint8_t svitLED = 0;
 
-//uint8_t mac[6] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46};
+//uint8_t mymac[6] = {0xdc, 0xa6, 0x32, 0xf4, 0x31, 0x66};
 uint8_t mymac[7] = {'R', 'A', 'D', 'E', 'K', 'T',0};
 uint8_t myip[4] = {192, 168, 100, 111};
+
+uint8_t pimac[6] = {0xdc, 0xa6, 0x32, 0xf4, 0x31, 0x67};
+uint8_t piip[4] = {192, 168, 100, 200};
 
 uint8_t baseurl[23]="http://192.168.100.111/";
 uint16_t mywwwport =80; // listen port for tcp/www (max range 1-254)
@@ -34,6 +37,7 @@ void gpio_callback(uint gpio, uint32_t events)
 		enc28j60_interrupt_handler();
 	}
 }
+
 
 
 int main() {
@@ -58,32 +62,29 @@ int main() {
 
 	gpio_set_irq_enabled_with_callback(15, GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
 
+
+	uint8_t pcip[4] = {192, 168, 100, 138};	
+	uint8_t pcmac[6] = {0x04, 0x92, 0x26, 0xd3, 0x6c, 0xfc};
+	
+
+	send_arp_probe(pcip);
+	send_arp_request(pcip);
+
+	send_echo_request(pcip, pcmac);
+	send_echo_request(piip, pimac);
+
+	uint8_t databuf[18] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18};
+	send_udp_packet(pcip, pcmac, databuf, 0);
+
 	while(1);
 
-
-/*    
-    uint8_t reread[10] = {0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20};
-    
-    printf("PHCON1  "BYTE_TO_BINARY_PATTERN" "BYTE_TO_BINARY_PATTERN"\n", BYTE_TO_BINARY(enc28j60_read_phy(PHCON1)>>8), BYTE_TO_BINARY(enc28j60_read_phy(PHCON1)));
-    printf("PHSTAT1 "BYTE_TO_BINARY_PATTERN" "BYTE_TO_BINARY_PATTERN"\n", BYTE_TO_BINARY(enc28j60_read_phy(PHSTAT1)>>8), BYTE_TO_BINARY(enc28j60_read_phy(PHSTAT1)));
-    printf("PHID1   "BYTE_TO_BINARY_PATTERN" "BYTE_TO_BINARY_PATTERN"\n", BYTE_TO_BINARY(enc28j60_read_phy(PHID1)>>8), BYTE_TO_BINARY(enc28j60_read_phy(PHID1)));
-    printf("PHID2   "BYTE_TO_BINARY_PATTERN" "BYTE_TO_BINARY_PATTERN"\n", BYTE_TO_BINARY(enc28j60_read_phy(PHID2)>>8), BYTE_TO_BINARY(enc28j60_read_phy(PHID2)));
-    printf("PHCON2  "BYTE_TO_BINARY_PATTERN" "BYTE_TO_BINARY_PATTERN"\n", BYTE_TO_BINARY(enc28j60_read_phy(PHCON2)>>8), BYTE_TO_BINARY(enc28j60_read_phy(PHCON2)));
-    printf("PHSTAT2 "BYTE_TO_BINARY_PATTERN" "BYTE_TO_BINARY_PATTERN"\n", BYTE_TO_BINARY(enc28j60_read_phy(PHSTAT2)>>8), BYTE_TO_BINARY(enc28j60_read_phy(PHSTAT2)));
-    printf("PHIE    "BYTE_TO_BINARY_PATTERN" "BYTE_TO_BINARY_PATTERN"\n", BYTE_TO_BINARY(enc28j60_read_phy(PHIE)>>8), BYTE_TO_BINARY(enc28j60_read_phy(PHIE)));
-    printf("PHIR    "BYTE_TO_BINARY_PATTERN" "BYTE_TO_BINARY_PATTERN"\n", BYTE_TO_BINARY(enc28j60_read_phy(PHIR)>>8), BYTE_TO_BINARY(enc28j60_read_phy(PHIR)));
-    printf("PHLCON  "BYTE_TO_BINARY_PATTERN" "BYTE_TO_BINARY_PATTERN"\n", BYTE_TO_BINARY(enc28j60_read_phy(PHLCON)>>8), BYTE_TO_BINARY(enc28j60_read_phy(PHLCON))); 
-
-    enc28j60_write_buffer(mac, 6);
-    enc28j60_read_buffer(reread, 6);
-*/
-
-
     while (true) {
+		send_echo_request(pcip, pcmac);
+		sleep_ms(1000);
+//        gpio_put(LED_PIN, 1);
+//        sleep_ms(50);
+//        gpio_put(LED_PIN, 0);
+//        sleep_ms(600);
 
-        gpio_put(LED_PIN, 1);
-        sleep_ms(50);
-        gpio_put(LED_PIN, 0);
-        sleep_ms(600);
     }
 }
