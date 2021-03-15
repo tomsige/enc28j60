@@ -443,3 +443,4 @@ build/CMakeFiles/enc28j60.dir/home/pi/pico/pico-sdk/src/rp2_common/pico_unique_i
 .gitignore
 build/CMakeFiles/enc28j60.dir/server.c.obj
 .gitignore
+build/CMakeFiles/enc28j60.dir/ip_arp_udp_tcp.c.obj
